@@ -254,10 +254,7 @@ export default function Hero() {
                   <img
                     src="/suryansh.jpg"
                     alt="Suryansh Gour"
-                    fill
-                    sizes="(max-width: 640px) 176px, (max-width: 768px) 208px, 224px"
-                    className="object-cover object-top"
-                    priority
+                    className="absolute inset-0 h-full w-full object-cover object-top"
                   />
                   {/* Subtle gradient overlay at bottom for depth */}
                   <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-slate-950/60 to-transparent pointer-events-none" />
