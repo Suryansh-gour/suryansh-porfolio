@@ -17,6 +17,7 @@ import CustomCursor from "@/components/CustomCursor";
 import LoadingScreen from "@/components/LoadingScreen";
 import ScrollProgress from "@/components/ScrollProgress";
 import ScrollToTop from "@/components/ScrollToTop";
+import ChatBot from "@/components/ChatBot";
 
 const title = "Suryansh Gour | BCA (AI & Data Science) | Full Stack Developer";
 const description =
@@ -72,6 +73,7 @@ function Home() {
             <Footer />
 
             <ScrollToTop />
+            <ChatBot />
           </motion.div>
         )}
       </AnimatePresence>

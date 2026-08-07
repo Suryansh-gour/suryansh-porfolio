@@ -61,7 +61,8 @@ export default function About() {
           <div className="lg:col-span-6 grid grid-cols-1 gap-6">
             {PILLARS.map((pillar, index) => (
               <motion.div
-                key={index}
+                key={`pillar-${index}`}
+
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
@@ -113,7 +114,8 @@ export default function About() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-6 border-t border-[var(--card-border)]">
               {STATS.map((stat, index) => (
                 <motion.div
-                  key={index}
+                  key={`stat-${index}`}
+
                   initial={{ opacity: 0, scale: 0.8 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true, margin: "-100px" }}

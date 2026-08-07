@@ -132,7 +132,8 @@ export default function Experience() {
               const isEven = index % 2 === 0;
               return (
                 <div
-                  key={index}
+                  key={`exp-${index}`}
+
                   className="flex flex-col md:flex-row items-stretch relative"
                 >
                   {/* Left Column (empty or holds card based on side) */}
