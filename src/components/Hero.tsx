@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { ArrowUpRight, Download, MessageSquare } from "lucide-react";
 import { Github, Linkedin } from "@/components/BrandIcons";
+import suryanshPhoto from "@/assets/suryansh.jpg.asset.json";
 
 // LeetCode Icon component as SVG
 const LeetCodeIcon = (props: React.SVGProps<SVGSVGElement>) => (
