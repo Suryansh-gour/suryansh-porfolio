@@ -73,7 +73,8 @@ export default function Certifications() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {CERTIFICATES_DATA.map((cert, index) => (
             <motion.div
-              key={index}
+              key={`cert-${index}`}
+
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
