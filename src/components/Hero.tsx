@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { ArrowUpRight, Download, Github, Linkedin, MessageSquare } from "lucide-react";
+import { ArrowUpRight, Download, MessageSquare } from "lucide-react";
+import { Github, Linkedin } from "@/components/BrandIcons";
 
 // LeetCode Icon component as SVG
 const LeetCodeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -25,7 +26,7 @@ export default function Hero() {
   // Typing effect parameters
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    const currentPhrase = TYPING_PHRASES[phraseIndex];
+    const currentPhrase = TYPING_PHRASES[phraseIndex] ?? "";
     
     const tick = () => {
       if (!isDeleting) {

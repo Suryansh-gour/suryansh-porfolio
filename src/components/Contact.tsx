@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
-import { Check, Copy, Github, Linkedin, Mail, MapPin, Send, Share2 } from "lucide-react";
+import { Check, Copy, Mail, MapPin, Send, Share2 } from "lucide-react";
+import { Github, Linkedin } from "@/components/BrandIcons";
 import emailjs from "@emailjs/browser";
 import confetti from "canvas-confetti";
 
@@ -34,9 +35,9 @@ export default function Contact() {
     setIsSubmitting(true);
     setSubmitStatus("idle");
 
-    const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "";
-    const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "";
-    const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "";
+    const serviceId = import.meta.env["VITE_EMAILJS_SERVICE_ID"] || "";
+    const templateId = import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] || "";
+    const publicKey = import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] || "";
 
     try {
       if (serviceId && templateId && publicKey) {

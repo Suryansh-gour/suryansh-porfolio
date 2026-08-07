@@ -127,14 +127,16 @@ export default function ParticleBackground() {
       // Draw connection lines
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
+          const a = particles[i]!;
+          const b = particles[j]!;
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < 110) {
             ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
             const lineOpacity = (110 - distance) / 110 * 0.08;
             ctx.strokeStyle = lColor.replace("OPACITY", lineOpacity.toString());
             ctx.lineWidth = 0.6;

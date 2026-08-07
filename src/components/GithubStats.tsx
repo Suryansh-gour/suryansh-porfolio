@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Folder, GitFork, Github, Link2, Star } from "lucide-react";
+import { Folder, GitFork, Link2, Star } from "lucide-react";
+import { Github } from "@/components/BrandIcons";
 import { useTheme } from "./ThemeProvider";
 
 interface Repo {

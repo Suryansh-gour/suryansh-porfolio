@@ -1,5 +1,6 @@
 import React from "react";
-import { Github, Heart, Instagram, Linkedin } from "lucide-react";
+import { Heart } from "lucide-react";
+import { Github, Instagram, Linkedin } from "@/components/BrandIcons";
 
 export default function Footer() {
   const handleScrollTo = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
