@@ -254,7 +254,7 @@ export default function Hero() {
                 {/* Photo */}
                 <div className="relative w-44 h-44 sm:w-52 sm:h-52 md:w-56 md:h-56 rounded-2xl overflow-hidden border-2 border-primary/30 shadow-xl shadow-primary/20 z-10">
                   <img
-                    src="/suryansh.jpg"
+                    src={suryanshPhoto.url}
                     alt="Suryansh Gour"
                     className="absolute inset-0 h-full w-full object-cover object-top"
                   />
