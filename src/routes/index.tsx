@@ -1,24 +1,80 @@
 import { createFileRoute } from "@tanstack/react-router";
+import React, { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import About from "@/components/About";
+import Skills from "@/components/Skills";
+import Projects from "@/components/Projects";
+import Certifications from "@/components/Certifications";
+import Experience from "@/components/Experience";
+import GithubStats from "@/components/GithubStats";
+import Resume from "@/components/Resume";
+import Contact from "@/components/Contact";
+import Footer from "@/components/Footer";
+import ParticleBackground from "@/components/ParticleBackground";
+import CustomCursor from "@/components/CustomCursor";
+import LoadingScreen from "@/components/LoadingScreen";
+import ScrollProgress from "@/components/ScrollProgress";
+import ScrollToTop from "@/components/ScrollToTop";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+const title = "Suryansh Gour | BCA (AI & Data Science) | Full Stack Developer";
+const description =
+  "Portfolio of Suryansh Gour — BCA (AI & Data Science) student at SAGE University Bhopal. Full stack developer, AI enthusiast and AWS learner.";
+
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Home,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Home() {
+  const [isLoading, setIsLoading] = useState(true);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <>
+      <LoadingScreen onComplete={() => setIsLoading(false)} />
+
+      <AnimatePresence>
+        {!isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col min-h-screen relative"
+          >
+            <ScrollProgress />
+            <CustomCursor />
+            <ParticleBackground />
+
+            <Navbar />
+
+            <main className="flex-grow">
+              <Hero />
+              <About />
+              <Skills />
+              <Projects />
+              <Certifications />
+              <Experience />
+              <GithubStats />
+              <Resume />
+              <Contact />
+            </main>
+
+            <Footer />
+
+            <ScrollToTop />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
