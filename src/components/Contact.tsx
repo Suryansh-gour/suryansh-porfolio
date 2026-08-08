@@ -226,6 +226,32 @@ export default function Contact() {
                   {errors.email && <span className="text-[10px] text-red-500 font-semibold">{errors.email.message}</span>}
                 </div>
 
+                {/* Phone */}
+                <div className="space-y-1.5">
+                  <label htmlFor="phone" className="text-xs font-mono text-[var(--text-muted)] font-semibold uppercase tracking-wider">Phone Number</label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    {...register("phone", {
+                      required: "Phone number is required",
+                      pattern: { value: /^[+0-9()\-\s]{7,20}$/, message: "Enter a valid phone number" }
+                    })}
+                    placeholder="+91 90000 00000"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--card-border)] bg-[var(--background)] text-sm text-[var(--foreground)] placeholder-slate-500 focus:outline-none focus:border-primary transition-colors"
+                  />
+                  {errors.phone && <span className="text-[10px] text-red-500 font-semibold">{errors.phone.message}</span>}
+                </div>
+
+                {/* Honeypot (hidden from humans, catches bots) */}
+                <input
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  {...register("website")}
+                  className="hidden"
+                />
+
                 {/* Subject */}
                 <div className="space-y-1.5">
                   <label htmlFor="subject" className="text-xs font-mono text-[var(--text-muted)] font-semibold uppercase tracking-wider">Subject</label>
