@@ -64,6 +64,7 @@ function Home() {
               <About />
               <Skills />
               <Projects />
+              <ResumeCTA />
               <Certifications />
               <Experience />
               <GithubStats />
