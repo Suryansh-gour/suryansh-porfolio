@@ -37,14 +37,22 @@ export default function Resume() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="flex flex-wrap justify-center gap-4"
+            className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 w-full sm:w-auto"
           >
             <a
-              href="/resume.pdf"
-              download
-              className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-primary via-secondary to-accent text-white font-bold flex items-center gap-2 hover:shadow-lg hover:shadow-primary/30 transform hover:-translate-y-0.5 transition-all text-sm duration-200 cursor-pointer"
+              href={RESUME_URL}
+              download="Suryansh_Gour_Resume.pdf"
+              className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-primary via-secondary to-accent text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/30 transform hover:-translate-y-0.5 transition-all text-sm duration-200 cursor-pointer"
             >
-              <Download size={16} /> Download Resume PDF
+              <Download size={16} /> Download Resume
+            </a>
+            <a
+              href={RESUME_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-8 py-3.5 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--foreground)] font-bold flex items-center justify-center gap-2 hover:border-primary/40 hover:text-primary transform hover:-translate-y-0.5 transition-all text-sm duration-200 cursor-pointer"
+            >
+              <ExternalLink size={16} /> View Resume
             </a>
           </motion.div>
 
