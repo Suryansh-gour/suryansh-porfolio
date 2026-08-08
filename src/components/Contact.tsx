@@ -271,7 +271,10 @@ export default function Contact() {
                   <textarea
                     id="message"
                     rows={5}
-                    {...register("message", { required: "Message content is required" })}
+                    {...register("message", {
+                      required: "Message content is required",
+                      minLength: { value: 10, message: "Please write at least 10 characters" }
+                    })}
                     placeholder="Describe your project or inquiry..."
                     className="w-full px-4 py-3 rounded-xl border border-[var(--card-border)] bg-[var(--background)] text-sm text-[var(--foreground)] placeholder-slate-500 focus:outline-none focus:border-primary transition-colors resize-none"
                   />
