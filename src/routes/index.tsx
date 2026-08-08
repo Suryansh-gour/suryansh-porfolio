@@ -10,6 +10,7 @@ import Certifications from "@/components/Certifications";
 import Experience from "@/components/Experience";
 import GithubStats from "@/components/GithubStats";
 import Resume from "@/components/Resume";
+import ResumeCTA from "@/components/ResumeCTA";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import ParticleBackground from "@/components/ParticleBackground";
