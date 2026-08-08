@@ -344,15 +344,9 @@ export default function ChatBot() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [threads, setThreads] = useState<Thread[]>(getInitialThreads);
-  const [activeThreadId, setActiveThreadId] = useState<string>(
-    () => getInitialThreads()[0]!.id
-  );
+  const [activeThreadId, setActiveThreadId] = useState<string>(() => threads[0]!.id);
   const [showSidebar, setShowSidebar] = useState(false);
 
-  // Ensure the initial active id matches the initial thread.
-  useEffect(() => {
-    setActiveThreadId((id) => (threads.some((t) => t.id === id) ? id : threads[0]!.id));
-  }, [threads]);
 
   const activeThread = useMemo(
     () =>
