@@ -300,7 +300,7 @@ export default function Contact() {
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-xs font-semibold rounded-xl text-center"
                   >
-                    Your message was sent successfully!
+                    Thank you! Your message has been sent successfully. I&apos;ll get back to you soon.
                   </motion.div>
                 )}
                 {submitStatus === "error" && (
