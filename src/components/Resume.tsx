@@ -1,6 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Download, FileText, Mail, MapPin, Phone } from "lucide-react";
+import { Download, ExternalLink, FileText, Mail, MapPin, Phone } from "lucide-react";
+
+/** Replace the PDF at this path to update the resume — no code changes needed. */
+export const RESUME_URL = "/resume/Suryansh_Gour_Resume.pdf";
+
 
 export default function Resume() {
   return (
