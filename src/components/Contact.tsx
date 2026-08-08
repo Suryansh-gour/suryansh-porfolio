@@ -36,43 +36,29 @@ export default function Contact() {
     setIsSubmitting(true);
     setSubmitStatus("idle");
 
-    const serviceId = import.meta.env["VITE_EMAILJS_SERVICE_ID"] || "";
-    const templateId = import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] || "";
-    const publicKey = import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] || "";
-
     try {
-      if (serviceId && templateId && publicKey) {
-        // Send email using EmailJS SDK
-        const response = await emailjs.send(
-          serviceId,
-          templateId,
-          {
-            from_name: data.name,
-            from_email: data.email,
-            subject: data.subject,
-            message: data.message,
-            to_email: "goursuryansh51@gmail.com"
-          },
-          publicKey
-        );
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          phone: data.phone ?? "",
+          subject: data.subject,
+          message: data.message,
+          website: data.website ?? ""
+        })
+      });
 
-        if (response.status === 200) {
-          setSubmitStatus("success");
-          triggerConfetti();
-          reset();
-        } else {
-          setSubmitStatus("error");
-        }
-      } else {
-        // Simulation mode (useful for immediate sandbox demonstration)
-        console.warn("EmailJS: Credentials missing in env. Running in simulation mode.");
-        await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate latency
+      if (response.ok) {
         setSubmitStatus("success");
         triggerConfetti();
         reset();
+      } else {
+        setSubmitStatus("error");
       }
     } catch (err) {
-      console.error("EmailJS Error:", err);
+      console.error("Contact form error:", err);
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
