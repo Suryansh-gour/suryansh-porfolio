@@ -5,6 +5,7 @@ import {
   getLovableAiGatewayResponseHeaders,
   getLovableAiGatewayRunId,
 } from "@/lib/ai-gateway.server";
+import { ASSISTANT_SYSTEM_PROMPT } from "@/lib/portfolio-knowledge";
 
 type ChatRequestBody = {
   messages?: UIMessage[];
@@ -17,20 +18,7 @@ function uiMessageToText(message: UIMessage): { role: "user" | "assistant"; cont
   return { role: message.role as "user" | "assistant", content: text };
 }
 
-
-const SYSTEM_PROMPT = `You are a helpful general assistant embedded in the personal portfolio of Suryansh Gour. Use the context below to answer questions about Suryansh when they come up, and otherwise answer general questions helpfully and concisely.
-
-About Suryansh Gour:
-- He is a BCA student specializing in Artificial Intelligence & Data Science at SAGE University, Bhopal (Aug 2024 – May 2027).
-- He is a full-stack web developer, AI enthusiast, and AWS User Group Campus Ambassador.
-- Tech stack: React, Next.js, Vite, TypeScript, Tailwind CSS, Node.js, SQL/NoSQL databases, OpenCV, Streamlit, GitHub Copilot.
-- Certifications: AWS Cloud Practitioner Essentials, Neo4j Certified Professional, Infosys certifications.
-- Experience: internships at a SaaS startup and a government-approved web development firm; national hackathon participant; freelancer.
-- Projects: several deployed full-stack projects (details are visible in the Projects section of the portfolio).
-- Social links: GitHub (https://github.com/Suryansh-gour), LinkedIn (https://linkedin.com/in/suryansh-gour).
-- Contact: use the Contact section on the portfolio to reach out.
-
-Keep replies friendly, concise, and useful. If you do not know something about Suryansh that is not in the context, say you do not know rather than inventing details.`;
+const SYSTEM_PROMPT = ASSISTANT_SYSTEM_PROMPT;
 
 export const Route = createFileRoute("/api/chat")({
   server: {

@@ -3,12 +3,18 @@ import { DefaultChatTransport } from "ai";
 import {
   Bot,
   MessageSquare,
+  Mic,
+  MicOff,
   MoreHorizontal,
   Plus,
+  RotateCcw,
+  Square,
   Trash2,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
@@ -30,6 +36,7 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
 import { cn } from "@/lib/utils";
 
 const transport = new DefaultChatTransport({ api: "/api/chat" });
@@ -47,6 +54,37 @@ const getInitialThreads = (): Thread[] => [
   { id: generateId(), title: "New chat", messages: [] },
 ];
 
+const messageText = (message: UIMessage) =>
+  message.parts
+    .filter((part) => part.type === "text")
+    .map((part) => (part.type === "text" ? part.text : ""))
+    .join("");
+
+/** Animated bars shown while the assistant speaks. */
+function Waveform({ active }: { active: boolean }) {
+  return (
+    <div className="flex items-end gap-[3px] h-4" aria-hidden="true">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <motion.span
+          key={i}
+          className="w-[3px] rounded-full bg-primary"
+          animate={
+            active
+              ? { height: ["25%", "100%", "45%", "85%", "30%"] }
+              : { height: "25%" }
+          }
+          transition={
+            active
+              ? { duration: 0.9, repeat: Infinity, delay: i * 0.1, ease: "easeInOut" }
+              : { duration: 0.2 }
+          }
+          style={{ height: "25%" }}
+        />
+      ))}
+    </div>
+  );
+}
+
 const ChatWindow = React.memo(function ChatWindow({
   thread,
   onUpdateMessages,
@@ -63,6 +101,23 @@ const ChatWindow = React.memo(function ChatWindow({
     },
   });
 
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const spokenIdsRef = useRef<Set<string>>(new Set());
+
+  const {
+    sttSupported,
+    listening,
+    speaking,
+    interim,
+    voiceError,
+    setVoiceError,
+    startListening,
+    stopListening,
+    speak,
+    stopSpeaking,
+  } = useVoiceAssistant();
+
   // Keep parent thread.messages in sync with this chat's local messages.
   useEffect(() => {
     if (messages !== thread.messages) {
@@ -70,15 +125,58 @@ const ChatWindow = React.memo(function ChatWindow({
     }
   }, [messages, thread.messages, onUpdateMessages]);
 
-  const handleSubmit = useCallback(
-    ({ text }: { text: string }) => {
-      if (!text.trim() || status === "submitted" || status === "streaming") return;
-      sendMessage({ text: text.trim() });
+  const isLoading = status === "submitted" || status === "streaming";
+
+  const submitText = useCallback(
+    (text: string) => {
+      const value = text.trim();
+      if (!value || isLoading) return;
+      sendMessage({ text: value });
     },
-    [sendMessage, status]
+    [isLoading, sendMessage],
   );
 
-  const isLoading = status === "submitted" || status === "streaming";
+  const handleSubmit = useCallback(
+    ({ text }: { text: string }) => submitText(text),
+    [submitText],
+  );
+
+  // Speak new assistant replies once streaming finishes (voice mode only).
+  const lastAssistant = useMemo(
+    () => [...messages].reverse().find((m) => m.role === "assistant"),
+    [messages],
+  );
+
+  useEffect(() => {
+    if (!voiceMode || muted || isLoading || !lastAssistant) return;
+    if (spokenIdsRef.current.has(lastAssistant.id)) return;
+    const text = messageText(lastAssistant);
+    if (!text.trim()) return;
+    spokenIdsRef.current.add(lastAssistant.id);
+    void speak(text);
+  }, [voiceMode, muted, isLoading, lastAssistant, speak]);
+
+  const toggleMic = useCallback(() => {
+    if (listening) {
+      stopListening();
+      return;
+    }
+    startListening((text) => submitText(text));
+  }, [listening, startListening, stopListening, submitText]);
+
+  const replay = useCallback(() => {
+    if (!lastAssistant) return;
+    const text = messageText(lastAssistant);
+    if (text.trim()) void speak(text);
+  }, [lastAssistant, speak]);
+
+  const statusLabel = listening
+    ? "Listening..."
+    : isLoading
+      ? "Thinking..."
+      : speaking
+        ? "Speaking..."
+        : null;
 
   return (
     <div className="flex flex-col h-full">
@@ -89,22 +187,23 @@ const ChatWindow = React.memo(function ChatWindow({
               <ConversationEmptyState
                 icon={<Bot className="size-6 text-primary" />}
                 title="How can I help you?"
-                description="Ask me anything about Suryansh, his work, or general topics."
+                description="Ask me about Suryansh's skills, projects, education or experience — type or tap the mic."
               />
             ) : (
-              messages.map((message) => {
-                const text = message.parts
-                  .filter((part) => part.type === "text")
-                  .map((part) => (part.type === "text" ? part.text : ""))
-                  .join("");
-                return (
-                  <Message key={message.id} from={message.role}>
-                    <MessageContent>
-                      <MessageResponse>{text}</MessageResponse>
-                    </MessageContent>
-                  </Message>
-                );
-              })
+              messages.map((message) => (
+                <Message key={message.id} from={message.role}>
+                  <MessageContent>
+                    <MessageResponse>{messageText(message)}</MessageResponse>
+                  </MessageContent>
+                </Message>
+              ))
+            )}
+            {interim && (
+              <Message from="user">
+                <MessageContent>
+                  <span className="text-sm italic opacity-70">{interim}</span>
+                </MessageContent>
+              </Message>
             )}
             {isLoading && messages.length > 0 && messages.at(-1)?.role === "user" && (
               <Message from="assistant">
@@ -120,26 +219,120 @@ const ChatWindow = React.memo(function ChatWindow({
         </Conversation>
       </div>
 
-      <div className="border-t border-[var(--card-border)] p-4 bg-[var(--card-bg)]">
-        {error && (
-          <div className="mb-2 text-xs text-red-500">
-            {error.message || "Something went wrong. Please try again."}
+      <div className="border-t border-[var(--card-border)] p-3 sm:p-4 bg-[var(--card-bg)] space-y-2">
+        {/* Voice control bar */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              setVoiceMode((v) => {
+                if (v) stopSpeaking();
+                return !v;
+              });
+              setVoiceError(null);
+            }}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors",
+              voiceMode
+                ? "bg-primary/15 text-primary"
+                : "bg-[var(--muted)] text-[var(--text-muted)] hover:text-[var(--foreground)]",
+            )}
+            aria-pressed={voiceMode}
+          >
+            <Volume2 size={13} /> Voice mode {voiceMode ? "on" : "off"}
+          </button>
+
+          {voiceMode && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setMuted((m) => {
+                    if (!m) stopSpeaking();
+                    return !m;
+                  });
+                }}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold bg-[var(--muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
+                aria-pressed={muted}
+              >
+                {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+                {muted ? "Unmute" : "Mute"}
+              </button>
+              <button
+                type="button"
+                onClick={replay}
+                disabled={!lastAssistant}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold bg-[var(--muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors disabled:opacity-40"
+              >
+                <RotateCcw size={13} /> Replay
+              </button>
+              {speaking && (
+                <button
+                  type="button"
+                  onClick={stopSpeaking}
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold bg-red-500/10 text-red-500 transition-colors"
+                >
+                  <Square size={12} /> Stop
+                </button>
+              )}
+            </>
+          )}
+
+          {statusLabel && (
+            <span className="ml-auto flex items-center gap-2 text-[11px] font-semibold text-primary">
+              {speaking && <Waveform active />}
+              {statusLabel}
+            </span>
+          )}
+        </div>
+
+        {(error || voiceError) && (
+          <div className="text-[11px] text-red-500">
+            {voiceError ?? "Something went wrong. Please try again."}
           </div>
         )}
-        <PromptInput onSubmit={handleSubmit}>
-          <PromptInputTextarea
-            placeholder="Ask me anything..."
-            className="min-h-12 max-h-40"
-            disabled={isLoading}
-          />
-          <PromptInputFooter className="justify-end pt-2">
-            <PromptInputSubmit
-              status={status}
-              onStop={stop}
-              disabled={isLoading && status !== "streaming"}
-            />
-          </PromptInputFooter>
-        </PromptInput>
+
+        <div className="flex items-end gap-2">
+          <button
+            type="button"
+            onClick={toggleMic}
+            disabled={!sttSupported}
+            aria-label={listening ? "Stop listening" : "Speak your question"}
+            className={cn(
+              "relative shrink-0 flex items-center justify-center w-11 h-11 rounded-full transition-colors",
+              listening
+                ? "bg-red-500 text-white"
+                : "bg-[var(--muted)] text-[var(--text-muted)] hover:text-primary",
+              !sttSupported && "opacity-40 cursor-not-allowed",
+            )}
+          >
+            {listening && (
+              <motion.span
+                className="absolute inset-0 rounded-full bg-red-500/40"
+                animate={{ scale: [1, 1.45], opacity: [0.6, 0] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+              />
+            )}
+            {sttSupported ? <Mic size={18} /> : <MicOff size={18} />}
+          </button>
+
+          <div className="flex-1 min-w-0">
+            <PromptInput onSubmit={handleSubmit}>
+              <PromptInputTextarea
+                placeholder="Ask me anything..."
+                className="min-h-12 max-h-40"
+                disabled={isLoading}
+              />
+              <PromptInputFooter className="justify-end pt-2">
+                <PromptInputSubmit
+                  status={status}
+                  onStop={stop}
+                  disabled={isLoading && status !== "streaming"}
+                />
+              </PromptInputFooter>
+            </PromptInput>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -151,10 +344,9 @@ export default function ChatBot() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [threads, setThreads] = useState<Thread[]>(getInitialThreads);
-  const [activeThreadId, setActiveThreadId] = useState<string>(
-    getInitialThreads()[0]!.id
-  );
+  const [activeThreadId, setActiveThreadId] = useState<string>(() => threads[0]!.id);
   const [showSidebar, setShowSidebar] = useState(false);
+
 
   const activeThread = useMemo(
     () =>
@@ -203,13 +395,10 @@ export default function ChatBot() {
     if (!thread || thread.title !== "New chat") return;
     const firstUser = thread.messages.find((m) => m.role === "user");
     if (!firstUser) return;
-    const text = firstUser.parts
-      .filter((p) => p.type === "text")
-      .map((p) => (p.type === "text" ? p.text : ""))
-      .join(" ");
+    const text = messageText(firstUser);
     const title = text.trim().slice(0, 30) || "New chat";
-    updateThreadTitle(activeThreadId, title);
-  }, [threads, activeThreadId]);
+    if (title !== "New chat") updateThreadTitle(activeThreadId, title);
+  }, [threads, activeThreadId, updateThreadTitle]);
 
   if (!mounted) return null;
 
@@ -241,9 +430,9 @@ export default function ChatBot() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             className={cn(
-              "fixed bottom-6 right-6 z-50 flex flex-col overflow-hidden rounded-2xl border border-[var(--card-border)] shadow-2xl",
+              "fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col overflow-hidden rounded-2xl border border-[var(--card-border)] shadow-2xl",
               "bg-[var(--card-bg)] text-[var(--foreground)]",
-              "w-[calc(100vw-2rem)] sm:w-[420px] h-[520px] max-h-[80vh]"
+              "w-[calc(100vw-2rem)] sm:w-[420px] h-[min(600px,80vh)]"
             )}
           >
             {/* Header */}
@@ -254,10 +443,10 @@ export default function ChatBot() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-semibold text-[var(--foreground)]">
-                    Assistant
+                    Suryansh&apos;s AI Assistant
                   </span>
                   <span className="text-xs text-[var(--text-muted)]">
-                    Powered by Lovable AI
+                    Ask or talk — voice enabled
                   </span>
                 </div>
               </div>

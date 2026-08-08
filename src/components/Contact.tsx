@@ -3,14 +3,15 @@ import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { Check, Copy, Mail, MapPin, Send, Share2 } from "lucide-react";
 import { Github, Linkedin } from "@/components/BrandIcons";
-import emailjs from "@emailjs/browser";
 import confetti from "canvas-confetti";
 
 interface ContactFormData {
   name: string;
   email: string;
+  phone: string;
   subject: string;
   message: string;
+  website?: string; // honeypot
 }
 
 export default function Contact() {
@@ -35,43 +36,29 @@ export default function Contact() {
     setIsSubmitting(true);
     setSubmitStatus("idle");
 
-    const serviceId = import.meta.env["VITE_EMAILJS_SERVICE_ID"] || "";
-    const templateId = import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] || "";
-    const publicKey = import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] || "";
-
     try {
-      if (serviceId && templateId && publicKey) {
-        // Send email using EmailJS SDK
-        const response = await emailjs.send(
-          serviceId,
-          templateId,
-          {
-            from_name: data.name,
-            from_email: data.email,
-            subject: data.subject,
-            message: data.message,
-            to_email: "goursuryansh51@gmail.com"
-          },
-          publicKey
-        );
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          phone: data.phone ?? "",
+          subject: data.subject,
+          message: data.message,
+          website: data.website ?? ""
+        })
+      });
 
-        if (response.status === 200) {
-          setSubmitStatus("success");
-          triggerConfetti();
-          reset();
-        } else {
-          setSubmitStatus("error");
-        }
-      } else {
-        // Simulation mode (useful for immediate sandbox demonstration)
-        console.warn("EmailJS: Credentials missing in env. Running in simulation mode.");
-        await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate latency
+      if (response.ok) {
         setSubmitStatus("success");
         triggerConfetti();
         reset();
+      } else {
+        setSubmitStatus("error");
       }
     } catch (err) {
-      console.error("EmailJS Error:", err);
+      console.error("Contact form error:", err);
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
@@ -239,6 +226,32 @@ export default function Contact() {
                   {errors.email && <span className="text-[10px] text-red-500 font-semibold">{errors.email.message}</span>}
                 </div>
 
+                {/* Phone */}
+                <div className="space-y-1.5">
+                  <label htmlFor="phone" className="text-xs font-mono text-[var(--text-muted)] font-semibold uppercase tracking-wider">Phone Number</label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    {...register("phone", {
+                      required: "Phone number is required",
+                      pattern: { value: /^[+0-9()\-\s]{7,20}$/, message: "Enter a valid phone number" }
+                    })}
+                    placeholder="+91 90000 00000"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--card-border)] bg-[var(--background)] text-sm text-[var(--foreground)] placeholder-slate-500 focus:outline-none focus:border-primary transition-colors"
+                  />
+                  {errors.phone && <span className="text-[10px] text-red-500 font-semibold">{errors.phone.message}</span>}
+                </div>
+
+                {/* Honeypot (hidden from humans, catches bots) */}
+                <input
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  {...register("website")}
+                  className="hidden"
+                />
+
                 {/* Subject */}
                 <div className="space-y-1.5">
                   <label htmlFor="subject" className="text-xs font-mono text-[var(--text-muted)] font-semibold uppercase tracking-wider">Subject</label>
@@ -258,7 +271,10 @@ export default function Contact() {
                   <textarea
                     id="message"
                     rows={5}
-                    {...register("message", { required: "Message content is required" })}
+                    {...register("message", {
+                      required: "Message content is required",
+                      minLength: { value: 10, message: "Please write at least 10 characters" }
+                    })}
                     placeholder="Describe your project or inquiry..."
                     className="w-full px-4 py-3 rounded-xl border border-[var(--card-border)] bg-[var(--background)] text-sm text-[var(--foreground)] placeholder-slate-500 focus:outline-none focus:border-primary transition-colors resize-none"
                   />
@@ -287,7 +303,7 @@ export default function Contact() {
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-xs font-semibold rounded-xl text-center"
                   >
-                    Your message was sent successfully!
+                    Thank you! Your message has been sent successfully. I&apos;ll get back to you soon.
                   </motion.div>
                 )}
                 {submitStatus === "error" && (
@@ -296,7 +312,7 @@ export default function Contact() {
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-semibold rounded-xl text-center"
                   >
-                    An error occurred. Please try again later.
+                    Something went wrong. Please try again later.
                   </motion.div>
                 )}
               </form>
