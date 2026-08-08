@@ -3,14 +3,15 @@ import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { Check, Copy, Mail, MapPin, Send, Share2 } from "lucide-react";
 import { Github, Linkedin } from "@/components/BrandIcons";
-import emailjs from "@emailjs/browser";
 import confetti from "canvas-confetti";
 
 interface ContactFormData {
   name: string;
   email: string;
+  phone: string;
   subject: string;
   message: string;
+  website?: string; // honeypot
 }
 
 export default function Contact() {
