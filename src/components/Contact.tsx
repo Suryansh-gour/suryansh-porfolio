@@ -18,6 +18,8 @@ export default function Contact() {
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("Something went wrong. Please try again later.");
+
 
   const {
     register,
