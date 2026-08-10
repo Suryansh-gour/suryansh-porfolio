@@ -322,7 +322,7 @@ export default function Contact() {
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-semibold rounded-xl text-center"
                   >
-                    Something went wrong. Please try again later.
+                    {errorMessage}
                   </motion.div>
                 )}
               </form>
