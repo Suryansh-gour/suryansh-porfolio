@@ -18,6 +18,8 @@ export default function Contact() {
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("Something went wrong. Please try again later.");
+
 
   const {
     register,
@@ -55,10 +57,18 @@ export default function Contact() {
         triggerConfetti();
         reset();
       } else {
+        const body = await response.json().catch(() => null);
+        setErrorMessage(
+          (body && typeof body.error === "string" && body.error) ||
+            (response.status === 429
+              ? "Too many messages. Please try again in a few minutes."
+              : "Something went wrong. Please try again later.")
+        );
         setSubmitStatus("error");
       }
     } catch (err) {
       console.error("Contact form error:", err);
+      setErrorMessage("Network error. Please check your connection and try again.");
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
@@ -312,7 +322,7 @@ export default function Contact() {
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-semibold rounded-xl text-center"
                   >
-                    Something went wrong. Please try again later.
+                    {errorMessage}
                   </motion.div>
                 )}
               </form>

@@ -4,12 +4,19 @@ import { z } from "zod";
 /**
  * Contact form endpoint.
  *
- * Required server secrets (never exposed to the browser):
- *   RESEND_API_KEY     – API key from https://resend.com/api-keys
+ * Delivery runs through the Lovable connector gateway using the linked Gmail
+ * connection, so messages land directly in the owner's inbox.
+ *
+ * Server env (never exposed to the browser):
+ *   LOVABLE_API_KEY      – auto-provisioned by Lovable
+ *   GOOGLE_MAIL_API_KEY  – provided by the linked Gmail connection
  * Optional:
- *   CONTACT_TO_EMAIL   – recipient inbox (defaults to goursuryansh51@gmail.com)
- *   CONTACT_FROM_EMAIL – verified sender (defaults to onboarding@resend.dev)
+ *   CONTACT_TO_EMAIL     – recipient inbox (defaults to goursuryansh51@gmail.com)
  */
+
+const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1";
+const OWNER_NAME = "Suryansh Gour";
+const DEFAULT_TO = "goursuryansh51@gmail.com";
 
 const ContactSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -41,6 +48,64 @@ function escapeHtml(value: string) {
     .replace(/"/g, "&quot;");
 }
 
+/** Strip CR/LF so user input can never inject extra mail headers. */
+function headerSafe(value: string) {
+  return value.replace(/[\r\n]+/g, " ").trim();
+}
+
+function encodeHeaderValue(value: string) {
+  const safe = headerSafe(value);
+  // eslint-disable-next-line no-control-regex
+  if (/^[\x20-\x7E]*$/.test(safe)) return safe;
+  return `=?UTF-8?B?${btoa(String.fromCharCode(...new TextEncoder().encode(safe)))}?=`;
+}
+
+function base64Url(input: string) {
+  const bytes = new TextEncoder().encode(input);
+  let binary = "";
+  bytes.forEach((b) => {
+    binary += String.fromCharCode(b);
+  });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function buildRawEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  replyTo?: string;
+}) {
+  const headers = [
+    `To: ${headerSafe(opts.to)}`,
+    `Subject: ${encodeHeaderValue(opts.subject)}`,
+    "MIME-Version: 1.0",
+    'Content-Type: text/html; charset="UTF-8"',
+  ];
+  if (opts.replyTo) headers.push(`Reply-To: ${headerSafe(opts.replyTo)}`);
+  return base64Url(`${headers.join("\r\n")}\r\n\r\n${opts.html}`);
+}
+
+async function sendGmail(
+  raw: string,
+  keys: { lovableApiKey: string; connectionKey: string },
+) {
+  const res = await fetch(`${GATEWAY_URL}/users/me/messages/send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${keys.lovableApiKey}`,
+      "X-Connection-Api-Key": keys.connectionKey,
+    },
+    body: JSON.stringify({ raw }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Gmail send failed [${res.status}]: ${body}`);
+  }
+  return res.json();
+}
+
 export const Route = createFileRoute("/api/contact")({
   server: {
     handlers: {
@@ -52,7 +117,7 @@ export const Route = createFileRoute("/api/contact")({
 
         if (isRateLimited(ip)) {
           return Response.json(
-            { error: "Too many messages. Please try again later." },
+            { error: "Too many messages. Please try again in a few minutes." },
             { status: 429 },
           );
         }
@@ -79,19 +144,19 @@ export const Route = createFileRoute("/api/contact")({
           timeStyle: "short",
         });
 
-        const apiKey = process.env["RESEND_API_KEY"];
-        const to = process.env["CONTACT_TO_EMAIL"] ?? "goursuryansh51@gmail.com";
-        const from = process.env["CONTACT_FROM_EMAIL"] ?? "Portfolio <onboarding@resend.dev>";
+        const lovableApiKey = process.env["LOVABLE_API_KEY"];
+        const connectionKey = process.env["GOOGLE_MAIL_API_KEY"];
+        const to = process.env["CONTACT_TO_EMAIL"] ?? DEFAULT_TO;
 
-        if (!apiKey) {
-          console.warn("[contact] RESEND_API_KEY not configured; message not delivered.");
+        if (!lovableApiKey || !connectionKey) {
+          console.warn("[contact] Email connection is not configured; message not delivered.");
           return Response.json(
             { error: "Email service is not configured yet." },
             { status: 503 },
           );
         }
 
-        const html = `
+        const notificationHtml = `
           <div style="font-family:Inter,Arial,sans-serif;max-width:640px;margin:auto;padding:24px;color:#0f172a">
             <h2 style="margin:0 0 16px;font-size:20px">New Portfolio Contact Message</h2>
             <table style="width:100%;border-collapse:collapse;font-size:14px">
@@ -105,36 +170,47 @@ export const Route = createFileRoute("/api/contact")({
             <div style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;font-size:14px;line-height:1.6">${escapeHtml(message)}</div>
           </div>`;
 
-        const text = `New Portfolio Contact Message\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || "—"}\nSubject: ${subject}\nMessage: ${message}\nDate: ${sentAt}`;
+        try {
+          await sendGmail(
+            buildRawEmail({
+              to,
+              subject: `Portfolio: ${subject}`,
+              html: notificationHtml,
+              replyTo: email,
+            }),
+            { lovableApiKey, connectionKey },
+          );
+        } catch (error) {
+          console.error("[contact] notification send error:", error);
+          return Response.json({ error: "Could not send message." }, { status: 502 });
+        }
+
+        // Confirmation to the visitor — best effort, never fails the request.
+        const confirmationHtml = `
+          <div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:auto;padding:24px;color:#0f172a">
+            <h2 style="margin:0 0 12px;font-size:20px">Thanks for reaching out, ${escapeHtml(name)}!</h2>
+            <p style="font-size:14px;line-height:1.6;color:#334155">
+              I've received your message and will get back to you as soon as possible — usually within 1–2 days.
+            </p>
+            <p style="margin:20px 0 6px;color:#64748b;font-size:13px">Your message</p>
+            <div style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;font-size:14px;line-height:1.6">${escapeHtml(message)}</div>
+            <p style="margin-top:24px;font-size:14px;color:#334155">Best regards,<br/><strong>${OWNER_NAME}</strong></p>
+          </div>`;
 
         try {
-          const res = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from,
-              to: [to],
-              reply_to: email,
-              subject: `Portfolio: ${subject}`,
-              html,
-              text,
+          await sendGmail(
+            buildRawEmail({
+              to: email,
+              subject: `Thanks for contacting ${OWNER_NAME}`,
+              html: confirmationHtml,
             }),
-          });
-
-          if (!res.ok) {
-            const body = await res.text();
-            console.error(`[contact] Resend failed [${res.status}]: ${body}`);
-            return Response.json({ error: "Could not send message." }, { status: 502 });
-          }
-
-          return Response.json({ ok: true });
+            { lovableApiKey, connectionKey },
+          );
         } catch (error) {
-          console.error("[contact] send error:", error);
-          return Response.json({ error: "Could not send message." }, { status: 500 });
+          console.error("[contact] confirmation send error:", error);
         }
+
+        return Response.json({ ok: true });
       },
     },
   },
