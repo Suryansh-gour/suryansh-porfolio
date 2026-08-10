@@ -57,10 +57,18 @@ export default function Contact() {
         triggerConfetti();
         reset();
       } else {
+        const body = await response.json().catch(() => null);
+        setErrorMessage(
+          (body && typeof body.error === "string" && body.error) ||
+            (response.status === 429
+              ? "Too many messages. Please try again in a few minutes."
+              : "Something went wrong. Please try again later.")
+        );
         setSubmitStatus("error");
       }
     } catch (err) {
       console.error("Contact form error:", err);
+      setErrorMessage("Network error. Please check your connection and try again.");
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
