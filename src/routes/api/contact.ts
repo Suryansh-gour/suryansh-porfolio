@@ -21,7 +21,12 @@ const DEFAULT_TO = "goursuryansh51@gmail.com";
 const ContactSchema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.string().trim().email().max(200),
-  phone: z.string().trim().max(30).optional().default(""),
+  phone: z
+    .string()
+    .trim()
+    .min(7)
+    .max(30)
+    .regex(/^[+0-9()\-\s]+$/),
   subject: z.string().trim().min(2).max(150),
   message: z.string().trim().min(10).max(4000),
   // honeypot – must stay empty
