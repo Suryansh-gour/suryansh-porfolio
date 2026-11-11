@@ -98,7 +98,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
           {/* Progress Percent */}
           <motion.div
             className="text-4xl font-extrabold font-heading text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent mb-2"
-            key={progress}
+            key={`progress-${progress}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.15 }}
@@ -109,7 +109,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
           {/* Changing Status Text */}
           <motion.div
             className="text-sm text-slate-400 font-mono tracking-wider h-5 flex items-center"
-            key={statusIndex}
+            key={`status-${statusIndex}`}
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 0.8, y: 0 }}
             exit={{ opacity: 0, y: -5 }}

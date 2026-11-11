@@ -18,6 +18,7 @@ export default function Contact() {
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [submitError, setSubmitError] = useState("");
 
 
   const {
@@ -36,6 +37,7 @@ export default function Contact() {
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
     setSubmitStatus("idle");
+    setSubmitError("");
 
     try {
       const response = await fetch("/api/contact", {
@@ -56,10 +58,23 @@ export default function Contact() {
         triggerConfetti();
         reset();
       } else {
+        const result = await response.json().catch(() => null);
+        const serverMessage =
+          result && typeof result.error === "string" ? result.error : "";
+        const fallbackMessage =
+          response.status === 429
+            ? "Too many messages. Please try again in a few minutes."
+            : response.status === 400
+              ? "Please check the form fields and try again."
+              : response.status === 503
+                ? "Email service is temporarily unavailable. Please try again later."
+                : "Your message could not be sent. Please try again later.";
+        setSubmitError(serverMessage || fallbackMessage);
         setSubmitStatus("error");
       }
     } catch (err) {
       console.error("Contact form error:", err);
+      setSubmitError("Could not reach the contact service. Check your connection and try again.");
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
@@ -313,7 +328,7 @@ export default function Contact() {
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-semibold rounded-xl text-center"
                   >
-                    Something went wrong. Please try again later.
+                    {submitError || "Something went wrong. Please try again later."}
                   </motion.div>
                 )}
               </form>
